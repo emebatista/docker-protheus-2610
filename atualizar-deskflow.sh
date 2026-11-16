@@ -22,9 +22,10 @@
 # não pergunta, não reinicia (o entrypoint inicia o backend logo depois) e não
 # age depois de um --restaurar (versão fixada até a próxima atualização manual).
 # Consulta o site no máximo uma vez a cada 24 h (DESKFLOW_AUTO_UPDATE_HORAS),
-# por mais que o container reinicie: a última consulta bem-sucedida fica em
-# /opt/deskflow/.deskflow_auto_check. Falha (sem internet etc.) não conta e
-# tenta de novo na próxima subida; imagem nova também volta a consultar.
+# por mais que o container reinicie: a última TENTATIVA fica em
+# /opt/deskflow/.deskflow_auto_check (falha por falta de internet também conta;
+# só a próxima subida após o intervalo consulta de novo). Imagem nova volta a
+# consultar na primeira subida.
 #
 # Fluxo: manifesto https://deskflow.com.br/updates/latest.json → download do
 # zip → confere o SHA-256 → extrai deskflow_srv → backup do atual → troca
@@ -190,6 +191,9 @@ fi
 # --- origem: manifesto do site ou zip local ---------------------------------
 NOVA=""; URL=""; SHA=""
 if [ -z "$ARQUIVO" ]; then
+    # --auto: a tentativa conta, dê certo ou não — reinícios em série (sem
+    # internet, site fora) não voltam a bater no site antes do intervalo.
+    [ "$AUTO" = 1 ] && marcar_verificacao
     MAN="$(curl -fsS -m "$([ "$AUTO" = 1 ] && echo 15 || echo 60)" "$MANIFEST_URL")" || die "não consegui ler $MANIFEST_URL (sem internet? use --arquivo)"
     read -r NOVA URL SHA < <(printf '%s' "$MAN" | python3 -c 'import json,sys
 m=json.load(sys.stdin)
