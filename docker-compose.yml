@@ -185,6 +185,10 @@ services:
         image: emebatista/deskflow-2610:latest
         platform: linux/amd64
         container_name: deskflow-2610
+        environment:
+            # 1 = na subida instala a versão mais nova do DeskFlow (deskflow.com.br), consultando
+            # o site no máximo 1x a cada 24 h (DESKFLOW_AUTO_UPDATE_HORAS); 0 = desliga.
+            - DESKFLOW_AUTO_UPDATE=1
         pid: host
         cap_add:
             - SYS_PTRACE

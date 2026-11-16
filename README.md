@@ -108,4 +108,26 @@ O banco de dados já vem restaurado dentro da imagem `postgres-2610` (volume `pg
 
 Para atualizar uma instalação existente para as imagens mais recentes: `docker compose pull` seguido de `docker compose up -d` (os volumes nomeados preservam banco, RPO, INIs e a configuração do DeskFlow). Para conferir o que está publicado: https://hub.docker.com/u/emebatista
 
+### Atualizar só o DeskFlow (sem esperar nova imagem)
+
+O DeskFlow recebe versões com mais frequência que a imagem. Para instalar a mais recente (backend e interface — a interface vem embutida no binário) direto no container:
+
+```sh
+docker exec -it deskflow-2610 atualizar-deskflow --verificar   # mostra versão atual e disponível
+docker exec -it deskflow-2610 atualizar-deskflow               # atualiza e reinicia o DeskFlow
+docker exec -it deskflow-2610 atualizar-deskflow --restaurar   # volta a versão anterior
+```
+
+O comando baixa a versão de https://deskflow.com.br, confere o SHA-256 antes de trocar qualquer arquivo, guarda backup do binário anterior em `./deskflow/` e reinicia o container (a interface volta em ~15 s). Sem internet no servidor: baixe o zip indicado em https://deskflow.com.br/updates/latest.json, coloque em `./deskflow/` e rode `atualizar-deskflow --arquivo /opt/deskflow/<arquivo>.zip`.
+
+**Atualização automática:** na subida do container o DeskFlow confere o site e, havendo versão nova, instala antes de iniciar (sem internet ou com falha, sobe com a versão que já tem). A consulta acontece no máximo uma vez a cada 24 h, por mais que o container reinicie; sem internet, tenta de novo na próxima subida. O intervalo muda com `DESKFLOW_AUTO_UPDATE_HORAS` no `environment`; a verificação manual (`atualizar-deskflow`) não tem limite. Para desligar, troque `DESKFLOW_AUTO_UPDATE=1` por `0` no serviço `deskflow` do `docker-compose.yml` e rode `docker compose up -d`. Depois de um `--restaurar`, a versão restaurada fica fixa até a próxima atualização manual.
+
+A versão instalada assim é mantida nas reinicializações. Um `docker compose pull` + `up -d` que traga imagem nova volta a usar o DeskFlow da imagem.
+
+Imagem `deskflow-2610` 1.0.0 (ainda sem o comando): rode a partir desta pasta
+
+```sh
+docker exec -i deskflow-2610 bash -s -- --sim < atualizar-deskflow.sh
+```
+
 Documentação completa: [guia do usuário em PDF](docs/Guia-Protheus-2610-Docker-DeskFlow.pdf).
